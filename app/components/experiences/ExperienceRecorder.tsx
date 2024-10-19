@@ -9,12 +9,85 @@ interface ExperienceRecorderProps {
   configurationId?: string; // Make configurationId optional
 }
 
+// Categories and their follow-up prompts
 const categories = [
-  { id: 'technical', name: 'Technical Skills & Achievements', 
-    basePrompt: "Tell me about a technical achievement you're proud of." },
-  { id: 'problem-solving', name: 'Problem Solving & Critical Thinking',
-    basePrompt: "Describe a complex problem you solved recently." },
-  // Add other categories as needed
+  { 
+    id: 'technical', 
+    name: 'Technical Achievement 🔧', 
+    basePrompt: "Tell me about a technical achievement you're proud of.",
+    followUps: [
+      "What technologies were involved?",
+      "Was this part of a larger project?",
+      "How many users/systems were affected?",
+      "What was the outcome?"
+    ]
+  },
+  { 
+    id: 'collaboration', 
+    name: 'Collaboration 👥', 
+    basePrompt: "Describe a significant team collaboration experience.",
+    followUps: [
+      "How large was the team?",
+      "What was your specific role?",
+      "Who were the key stakeholders?",
+      "How did you ensure everyone was aligned?"
+    ]
+  },
+  { 
+    id: 'personal-projects', 
+    name: 'Personal Projects 🚀', 
+    basePrompt: "Tell me about a significant personal project you worked on.",
+    followUps: [
+      "What inspired this project?",
+      "What problem were you solving?",
+      "Why did you choose these technologies?",
+      "What did you achieve?"
+    ]
+  },
+  { 
+    id: 'problem-solving', 
+    name: 'Problem Solving 🧩', 
+    basePrompt: "Describe a complex problem you had to solve.",
+    followUps: [
+      "What made this problem complex?",
+      "Who was affected?",
+      "What were the constraints?",
+      "What were the results?"
+    ]
+  },
+  { 
+    id: 'leadership', 
+    name: 'Leadership 👑', 
+    basePrompt: "Describe a situation where you demonstrated leadership.",
+    followUps: [
+      "What was the situation?",
+      "Who did you lead?",
+      "What challenges did you face?",
+      "What was the outcome?"
+    ]
+  },
+  { 
+    id: 'conflict-resolution', 
+    name: 'Conflict Resolution ⚖️', 
+    basePrompt: "Describe a conflict situation you helped resolve.",
+    followUps: [
+      "What was the disagreement about?",
+      "Who was involved?",
+      "What methods did you use?",
+      "How was it resolved?"
+    ]
+  },
+  { 
+    id: 'general-reflection', 
+    name: 'General Reflection 📝', 
+    basePrompt: "Reflect on a significant experience in your career.",
+    followUps: [
+      "What did you learn from this experience?",
+      "How has it shaped your perspective?",
+      "What would you do differently?",
+      "How did it impact your future decisions?"
+    ]
+  }
 ];
 
 export const ExperienceRecorder: React.FC<ExperienceRecorderProps> = ({ accessToken, configurationId }) => {
@@ -51,6 +124,17 @@ export const ExperienceRecorder: React.FC<ExperienceRecorderProps> = ({ accessTo
           <option key={category.id} value={category.id}>{category.name}</option>
         ))}
       </select>
+
+      {selectedCategory && (
+        <div className="mt-4">
+          <h3 className="font-bold">Follow-Up Prompts:</h3>
+          <ul className="list-disc pl-5">
+            {categories.find(c => c.id === selectedCategory)?.followUps.map((question, index) => (
+              <li key={index}>{question}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {readyState === VoiceReadyState.OPEN ? (
         <Button onClick={disconnect}>End Recording</Button>
