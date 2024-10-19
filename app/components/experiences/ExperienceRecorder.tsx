@@ -1,4 +1,3 @@
-// components/experiences/ExperienceRecorder.tsx
 "use client";
 import React, { useState } from 'react';
 import { useVoice, VoiceReadyState } from "@humeai/voice-react";
@@ -9,105 +8,103 @@ interface ExperienceRecorderProps {
   configurationId?: string; // Make configurationId optional
 }
 
-// Categories and their follow-up prompts
-const categories = [
-  { 
-    id: 'technical', 
-    name: 'Technical Achievement 🔧', 
-    basePrompt: "Tell me about a technical achievement you're proud of.",
-    followUps: [
-      "What technologies were involved?",
-      "Was this part of a larger project?",
-      "How many users/systems were affected?",
-      "What was the outcome?"
-    ]
+// Define the type for category
+interface Category {
+  configurationId: string; 
+  name: string; 
+}
+
+// Define the type for categories object
+interface Categories {
+  [key: string]: Category;
+}
+
+// Categories and their configurations
+const categories: Categories = {
+  technical: {
+    configurationId: '4f2784b0-9f0f-4ed2-af07-4305728106f2', 
+    name: "Technical Experience" // Add names for categories
   },
-  { 
-    id: 'collaboration', 
-    name: 'Collaboration 👥', 
-    basePrompt: "Describe a significant team collaboration experience.",
-    followUps: [
-      "How large was the team?",
-      "What was your specific role?",
-      "Who were the key stakeholders?",
-      "How did you ensure everyone was aligned?"
-    ]
+  collaboration: {
+    configurationId: 'ac106f87-78ca-47d5-8f46-99420e86678e',
+    name: "Collaboration Experience" // Add names for categories
   },
-  { 
-    id: 'personal-projects', 
-    name: 'Personal Projects 🚀', 
-    basePrompt: "Tell me about a significant personal project you worked on.",
-    followUps: [
-      "What inspired this project?",
-      "What problem were you solving?",
-      "Why did you choose these technologies?",
-      "What did you achieve?"
-    ]
+  personalProjects: {
+    configurationId: 'e3fec69c-b63e-49fe-9376-5f610f452cfb', 
+    name: "Personal Projects"
   },
-  { 
-    id: 'problem-solving', 
-    name: 'Problem Solving 🧩', 
-    basePrompt: "Describe a complex problem you had to solve.",
-    followUps: [
-      "What made this problem complex?",
-      "Who was affected?",
-      "What were the constraints?",
-      "What were the results?"
-    ]
+  problemSolving: {
+    configurationId: 'e3fec69c-b63e-49fe-9376-5f610f452cfb', 
+    name: "Problem Solving"
   },
-  { 
-    id: 'leadership', 
-    name: 'Leadership 👑', 
-    basePrompt: "Describe a situation where you demonstrated leadership.",
-    followUps: [
-      "What was the situation?",
-      "Who did you lead?",
-      "What challenges did you face?",
-      "What was the outcome?"
-    ]
+  leadership: {
+    configurationId: '65676331-4a88-41c8-9c77-296aedff0bef',
+    name: "Leadership"
   },
-  { 
-    id: 'conflict-resolution', 
-    name: 'Conflict Resolution ⚖️', 
-    basePrompt: "Describe a conflict situation you helped resolve.",
-    followUps: [
-      "What was the disagreement about?",
-      "Who was involved?",
-      "What methods did you use?",
-      "How was it resolved?"
-    ]
+  conflictResolution: {
+    configurationId: '526532dc-2e2c-40de-a8e9-5723fc917c1d', 
+    name: "Conflict Resolution"
   },
-  { 
-    id: 'general-reflection', 
-    name: 'General Reflection 📝', 
-    basePrompt: "Reflect on a significant experience in your career.",
-    followUps: [
-      "What did you learn from this experience?",
-      "How has it shaped your perspective?",
-      "What would you do differently?",
-      "How did it impact your future decisions?"
-    ]
-  }
-];
+  generalReflection: {
+    configurationId: '379b9aa1-070f-4fb1-a20b-bf1e34c6964d',
+    name: "General Reflection" 
+  },
+};
 
 export const ExperienceRecorder: React.FC<ExperienceRecorderProps> = ({ accessToken, configurationId }) => {
   const { connect, disconnect, readyState, messages } = useVoice();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [hasFinished, setHasFinished] = useState(false); // Track if the experience recording is finished
+  const [botResponse, setBotResponse] = useState<string | null>(null); // State to store bot response
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (selectedCategory) {
-      const category = categories.find(c => c.id === selectedCategory);
+      const category = categories[selectedCategory]; // Use selectedCategory to get the category
       if (category) {
-        connect()
-          .then(() => {
-            console.log("Session started");
-            // Optionally set the user message or handle other setup here
-          })
-          .catch((error) => {
-            console.error("Failed to start session", error);
-          });
+        // Prepare the full prompt to send to the model
+        const basePrompt = `As a career planner, you have the opportunity to listen to your mentee explain a work-related experience in the category of "${category.name}". Your goal is to document this experience in a way that captures relevant details, especially for future interviews.`;
+
+        try {
+          await connect();
+          console.log("Session started");
+
+          // Send the full prompt to Hume AI API here
+          const response = await sendPromptToHumeAI(basePrompt);
+          console.log("Hume AI Response:", response);
+
+          // Display the model's response
+          setBotResponse(response.reply); // Assuming the model's reply structure
+          setHasFinished(true);
+
+        } catch (error) {
+          console.error("Failed to start session", error);
+        }
       }
     }
+  };
+
+  const sendPromptToHumeAI = async (prompt: string) => {
+    const url = "https://api.hume.ai/v1/emotions"; // Example endpoint
+    const headers = {
+      "Authorization": `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    };
+    const data = {
+      text: prompt,
+      language: "en", // Specify the language if needed
+    };
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to send prompt to Hume AI');
+    }
+    
+    return response.json(); // Return the response JSON
   };
 
   return (
@@ -120,21 +117,10 @@ export const ExperienceRecorder: React.FC<ExperienceRecorderProps> = ({ accessTo
         className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
       >
         <option value="">Select a category</option>
-        {categories.map((category) => (
-          <option key={category.id} value={category.id}>{category.name}</option>
+        {Object.entries(categories).map(([key, category]) => ( // Change to Object.entries for mapping
+          <option key={key} value={key}>{category.name}</option>
         ))}
       </select>
-
-      {selectedCategory && (
-        <div className="mt-4">
-          <h3 className="font-bold">Follow-Up Prompts:</h3>
-          <ul className="list-disc pl-5">
-            {categories.find(c => c.id === selectedCategory)?.followUps.map((question, index) => (
-              <li key={index}>{question}</li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       {readyState === VoiceReadyState.OPEN ? (
         <Button onClick={disconnect}>End Recording</Button>
@@ -156,7 +142,22 @@ export const ExperienceRecorder: React.FC<ExperienceRecorderProps> = ({ accessTo
           }
           return null;
         })}
+
+        {/* Displaying the bot's response */}
+        {botResponse && (
+          <div className="p-4 bg-blue-100 rounded-lg">
+            <div className="font-bold">Bot Response</div>
+            <div>{botResponse}</div>
+          </div>
+        )}
       </div>
+
+      {hasFinished && (
+        <div className="mt-4 p-4 bg-green-100 rounded-lg">
+          <h3 className="font-bold">Thank you for sharing!</h3>
+          <p>Your experience has been documented. If there's anything else you'd like to share, feel free to express it.</p>
+        </div>
+      )}
     </div>
   );
 };
